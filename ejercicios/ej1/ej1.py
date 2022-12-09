@@ -30,3 +30,32 @@ def solve(board):
 # Por ejemplo: 101 010 101
 # 987 654 321
 # Esto significa que [2,4,6,8] son candidatos para esta celda.
+
+class Cell:
+  ALL_BIT_CANDIDATES = 0
+  NO_BIT_CANDIDATES = 511 # 111111111
+
+  def __init__(self,x,y):
+    self.bit_candidates = self.ALL_BIT_CANDIDATES
+    self.candidates = set()
+    self.x = x
+    self.y = y
+
+  def __eq__(self,other):
+    return self.x == other.x and self.y == other.y
+
+  def __hash__(self):
+    return hash((x,y))
+
+  def sole_candidate(self):
+    self.candidates = set()
+    result = 0
+
+    for i in range(9):
+      if (self.bit_candidates & (1 << i)) == 0:
+        self.candidates.add(i + 1)
+
+    if len(self.candidates) == 1:
+      for result in self.candidates: break
+
+    return result
