@@ -287,3 +287,298 @@ class UniqueGroup:
 
     combo.cells.append(cell)
     combo.count += 1
+      return self.uniques[i][j]
+  
+class Uniques:
+  MAX_UNIQUES = 4 # 0 = singles; 1 = pairs; 2 = triplets; 3 = quads; etc.
+
+  def __init__(self):
+    self.uniques = []
+
+  def init(self):
+    self.uniques.append([])
+
+  def init_group(self,i):
+    self.uniques[i].append(UniqueGroup())
+
+  def eliminate_candidates(self):
+    eliminated = False
+
+    # Singles
+    for group in self.uniques[0]:
+      for candidates,combo in group.combos.items():
+        if combo.count == 1:
+          # Should only be 1 cell
+          bit_candidates = Cell.NO_BIT_CANDIDATES ^ (1 << (candidates[0] - 1))
+          cell = combo.cells[0]
+
+          # Avoid infinite loop
+          if cell.bit_candidates != bit_candidates:
+            cell.bit_candidates = bit_candidates
+            eliminated = True
+
+    # Pairs, triplets, quads, etc.
+    for i in range(1,self.MAX_UNIQUES):
+      for j,group in enumerate(self.uniques[i]):
+        for candidates,combo in group.combos.items():
+          k = i + 1 # k => 2 = pairs; 3 = triplets; 4 = quads; etc.
+
+          # Example for pairs:
+          #   If (2,4) == 2 and (2) == 2 and (4) == 2, then must only be (2,4).
+          if combo.count == k:
+            bit_candidates = Cell.NO_BIT_CANDIDATES
+            is_valid = True
+            sibling_bit_candidates = Cell.ALL_BIT_CANDIDATES
+
+            for candidate in candidates:
+              # Check singles
+              if self.uniques[0][j].combos[(candidate,)].count != k:
+                is_valid = False
+                break
+
+              bit_candidate = 1 << (candidate - 1)
+              bit_candidates ^= bit_candidate
+              sibling_bit_candidates |= bit_candidate
+
+            if is_valid:
+              # Naked candidates
+              for cell in combo.cells:
+                # Avoid infinite loop
+                if len(cell.candidates) > k:
+                  cell.bit_candidates = bit_candidates
+                  eliminated = True
+
+              # Hidden candidates
+              for sibling_combo in self.uniques[0][j].combos.values():
+                cell = sibling_combo.cells[0]
+
+                # In the previous singles/nakeds/hiddens we could have eliminated all, so check if none
+                if (cell.bit_candidates | sibling_bit_candidates) != Cell.NO_BIT_CANDIDATES:
+                  old_bit_candidates = cell.bit_candidates
+                  cell.bit_candidates |= sibling_bit_candidates
+
+                  # Avoid infinite loop
+                  if cell.bit_candidates != old_bit_candidates:
+                    eliminated = True
+
+    return eliminated
+
+  def group(self,i,j):
+    return self.uniques[i][j]
+
+def print_sudoku(board,title=None):
+  if title is not None: print(title)
+  y = 0
+
+  for row in board:
+    x = 0
+    print(end='  ')
+
+    for column in row:
+      x += 1
+      print('_' if column == 0 else column,end='  ' if (x % 3) == 0 else ' ')
+
+    y += 1
+    print()
+    if (y % 3) == 0 and y != 8: print()
+
+# I used this for debugging 1D lists.
+def print_sudoku_group(group,title=None):
+  if title is not None: print(title,end="\n  ")
+  print("\n  ".join(map(str,group)))
+
+# For args, non-digits are stripped, and you can use '-', '_', or '0'.
+#
+# Example: $ python3 hard_sudoku_solver.py "
+#          >   9 - -  - 8 -  - - 1
+#          >   - - -  4 - 6  - - -
+#          >   - - 5  - 7 -  3 - -
+#          >
+#          >   - 6 -  - - -  - 4 -
+#          >   4 - 1  - 6 -  5 - 8
+#          >   - 9 -  - - -  - 2 -
+#          >
+#          >   - - 7  - 3 -  2 - -
+#          >   - - -  7 - 5  - - -
+#          >   1 - -  - 4 -  - - 7
+#          > "
+if len(sys.argv) > 1:
+  for i in range(1,len(sys.argv)):
+    arg = sys.argv[i]
+    puzzle = []
+
+    for row in re.split(r"\n+",arg):
+      row = re.sub(r'[^\d\-_]+','',row)
+      row = re.sub(r'[\-_]','0',row)
+      row = list(map(int,row))
+
+      if len(row) == 0: continue
+      if len(row) != 9: break
+
+      puzzle.append(row)
+
+    if len(puzzle) != 9:
+      print('Skipping arg[{}]: len != 9x9'.format(i))
+      continue
+
+    print_sudoku(puzzle,'Puzzle from arg[{}]:'.format(i))
+    print_sudoku(solve(puzzle),'Result from arg[{}]:'.format(i))
+
+  exit()
+
+# Author's test
+problem = [
+  [9,0,0, 0,8,0, 0,0,1],
+  [0,0,0, 4,0,6, 0,0,0],
+  [0,0,5, 0,7,0, 3,0,0],
+
+  [0,6,0, 0,0,0, 0,4,0],
+  [4,0,1, 0,6,0, 5,0,8],
+  [0,9,0, 0,0,0, 0,2,0],
+
+  [0,0,7, 0,3,0, 2,0,0],
+  [0,0,0, 7,0,5, 0,0,0],
+  [1,0,0, 0,4,0, 0,0,7]
+]
+solution = [
+  [9,2,6, 5,8,3, 4,7,1],
+  [7,1,3, 4,2,6, 9,8,5],
+  [8,4,5, 9,7,1, 3,6,2],
+
+  [3,6,2, 8,5,7, 1,4,9],
+  [4,7,1, 2,6,9, 5,3,8],
+  [5,9,8, 3,1,4, 7,2,6],
+
+  [6,5,7, 1,3,8, 2,9,4],
+  [2,8,4, 7,9,5, 6,1,3],
+  [1,3,9, 6,4,2, 8,5,7]
+]
+my_solution = solve(problem)
+print_sudoku(problem,'Problem:')
+print_sudoku(solution,'Solution:')
+print_sudoku(my_solution,'My solution:')
+print('My solution = solution? ',my_solution == solution)
+print()
+
+# Super hard puzzle (just 1-2 givens in each block)
+puzzle = [
+  [0,0,0, 0,7,0, 0,0,0],
+  [0,3,0, 1,0,0, 0,9,0],
+  [0,0,4, 0,0,0, 8,0,0],
+
+  [0,0,6, 0,0,0, 0,4,0],
+  [0,0,0, 0,0,0, 0,0,5],
+  [0,0,0, 0,0,0, 0,0,0],
+
+  [0,4,3, 2,0,0, 5,0,0],
+  [0,0,0, 0,0,0, 0,3,0],
+  [0,0,0, 0,3,0, 0,0,0]
+]
+print_sudoku(puzzle,'Super hard puzzle:')
+print_sudoku(solve(puzzle),'Super hard solution:')
+
+# Yonban hard test
+puzzle = [
+  [9,0,6, 0,7,0, 4,0,3],
+  [0,0,0, 4,0,0, 2,0,0],
+  [0,7,0, 0,2,3, 0,1,0],
+
+  [5,0,0, 0,0,0, 1,0,0],
+  [0,4,0, 2,0,8, 0,6,0],
+  [0,0,3, 0,0,0, 0,0,5],
+
+  [0,3,0, 7,0,0, 0,5,0],
+  [0,0,7, 0,0,5, 0,0,0],
+  [4,0,5, 0,1,0, 7,0,8]
+]
+print_sudoku(puzzle,'Yonban hard puzzle:')
+print_sudoku(solve(puzzle),'Yonban hard solution:')
+
+# Sanban hard test
+puzzle = [
+  [0,0,3, 2,0,0, 0,0,4],
+  [0,2,0, 0,9,0, 0,6,0],
+  [8,0,0, 0,0,5, 1,0,0],
+
+  [6,0,0, 0,0,7, 4,0,0],
+  [0,9,0, 0,5,0, 0,1,0],
+  [0,0,7, 9,0,0, 0,0,6],
+
+  [0,0,4, 3,0,0, 0,0,2],
+  [0,3,0, 0,7,0, 0,4,0],
+  [7,0,0, 0,0,4, 5,0,0]
+]
+print_sudoku(puzzle,'Sanban hard puzzle:')
+print_sudoku(solve(puzzle),'Sanban hard solution:')
+
+# Niban hard test
+puzzle = [
+  [0,0,5, 0,0,0, 8,0,0],
+  [0,2,0, 8,0,9, 0,7,0],
+  [3,0,0, 0,4,0, 0,0,1],
+
+  [0,3,0, 2,0,6, 0,1,0],
+  [0,0,2, 0,0,0, 5,0,0],
+  [0,7,0, 5,0,4, 0,6,0],
+
+  [2,0,0, 0,6,0, 0,0,4],
+  [0,8,0, 4,0,2, 0,9,0],
+  [0,0,7, 0,0,0, 2,0,0]
+]
+print_sudoku(puzzle,'Niban hard puzzle:')
+print_sudoku(solve(puzzle),'Niban hard solution:')
+
+# Ichiban hard test
+puzzle = [
+  [0,8,0, 0,0,9, 7,4,3],
+  [0,5,0, 0,0,8, 0,1,0],
+  [0,1,0, 0,0,0, 0,0,0],
+
+  [8,0,0, 0,0,5, 0,0,0],
+  [0,0,0, 8,0,4, 0,0,0],
+  [0,0,0, 3,0,0, 0,0,6],
+
+  [0,0,0, 0,0,0, 0,7,0],
+  [0,3,0, 5,0,0, 0,8,0],
+  [9,7,2, 4,0,0, 0,5,0]
+]
+print_sudoku(puzzle,'Ichiban hard puzzle:')
+print_sudoku(solve(puzzle),'Ichiban hard solution:')
+
+# Test sole candidate
+puzzle = [
+  [5,3,0, 0,7,0, 0,0,0],
+  [6,0,0, 1,9,5, 0,0,0],
+  [0,9,8, 0,0,0, 0,6,0],
+
+  [8,0,0, 0,6,0, 0,0,3],
+  [4,0,0, 8,0,3, 0,0,1],
+  [7,0,0, 0,2,0, 0,0,6],
+
+  [0,6,0, 0,0,0, 2,8,0],
+  [0,0,0, 4,1,9, 0,0,5],
+  [0,0,0, 0,8,0, 0,7,9]
+]
+print_sudoku(puzzle,'Sole candidate puzzle:')
+b = Board(puzzle)
+b.solve()
+print_sudoku(b.board,'Sole candidate solution:')
+
+# Test unique candidate (4 below 5)
+puzzle = [
+  [0,0,4, 0,0,0, 0,0,0],
+  [0,0,0, 0,0,0, 0,0,0],
+  [0,0,0, 0,0,0, 0,0,0],
+
+  [0,0,0, 0,0,0, 0,0,0],
+  [0,4,0, 0,0,0, 0,0,0],
+  [0,0,0, 0,0,0, 0,0,0],
+
+  [5,0,0, 0,0,0, 0,0,0],
+  [0,0,0, 0,0,0, 0,0,0],
+  [0,0,0, 0,0,4, 0,0,0]
+]
+print_sudoku(puzzle,'Unique candidate puzzle:')
+b = Board(puzzle)
+b.solve()
+print_sudoku(b.board,'Unique candidate solution:')
