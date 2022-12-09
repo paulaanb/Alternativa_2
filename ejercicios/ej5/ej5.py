@@ -26,14 +26,14 @@ def encryptRailFence(text, key):
         rail[row][col] = text[i]
         col += 1
          
-        # find the next row using
-        # direction flag
+# encontrar la siguiente fila usando
+# bandera de dirección
         if dir_down:
             row += 1
         else:
             row -= 1
-    # now we can construct the cipher
-    # using the rail matrix
+# Ahora podemos construir el cifrado
+    # utilizando la matriz de carriles
     result = []
     for i in range(key):
         for j in range(len(text)):
@@ -41,44 +41,44 @@ def encryptRailFence(text, key):
                 result.append(rail[i][j])
     return("" . join(result))
      
-# This function receives cipher-text
-# and key and returns the original
-# text after decryption
+# Esta función recibe texto cifrado
+# y tecla y devuelve el original
+# texto después de descifrado
 def decryptRailFence(cipher, key):
  
-    # create the matrix to cipher
-    # plain text key = rows ,
-    # length(text) = columns
-    # filling the rail matrix to
-    # distinguish filled spaces
-    # from blank ones
+# crear la matriz para cifrar
+    # clave de texto plano = filas ,
+    # longitud (texto) = columnas
+    # rellenando la matriz de carril a
+    # distinguir los espacios llenos
+    # De los en blanco
     rail = [['\n' for i in range(len(cipher))]
                   for j in range(key)]
      
-    # to find the direction
+    # para encontrar la direccion
     dir_down = None
     row, col = 0, 0
      
-    # mark the places with '*'
+    # marcamos los lugares con '*'
     for i in range(len(cipher)):
         if row == 0:
             dir_down = True
         if row == key - 1:
             dir_down = False
          
-        # place the marker
+        # lugar de la marca
         rail[row][col] = '*'
         col += 1
          
-        # find the next row
-        # using direction flag
+# Encontrar la siguiente fila
+        # usando la bandera de dirección
         if dir_down:
             row += 1
         else:
             row -= 1
              
-    # now we can construct the
-    # fill the rail matrix
+# Ahora podemos construir el
+    # rellenar la matriz de carril
     index = 0
     for i in range(key):
         for j in range(len(cipher)):
@@ -87,40 +87,39 @@ def decryptRailFence(cipher, key):
                 rail[i][j] = cipher[index]
                 index += 1
          
-    # now read the matrix in
-    # zig-zag manner to construct
-    # the resultant text
+# ahora lee la matriz en
+    # manera de construir en zig-zag
+    # el texto resultante
     result = []
     row, col = 0, 0
     for i in range(len(cipher)):
          
-        # check the direction of flow
+   # Compruebe la dirección del flujo
         if row == 0:
             dir_down = True
         if row == key-1:
             dir_down = False
              
-        # place the marker
+        #lugar de la marca
         if (rail[row][col] != '*'):
             result.append(rail[row][col])
             col += 1
              
-        # find the next row using
-        # direction flag
+# encontrar la siguiente fila usando
+        # bandera de dirección
         if dir_down:
             row += 1
         else:
             row -= 1
     return("".join(result))
  
-# Driver code
+# Codigo cifrar
 if __name__ == "__main__":
     print(encryptRailFence("Ruben apruebame por favor", 2))
     print(encryptRailFence("No quiero ir a enero ", 3))
     print(encryptRailFence("Me vale con un 5", 3))
      
-    # Now decryption of the
-    # same cipher-text
+    # codigo descifrar
     print(decryptRailFence("Rbnareaeprfvrue pubm o ao", 3))
     print(decryptRailFence("Nuo n oqir raeeo ei r", 2))
     print(decryptRailFence("Macuevl o n5 en ", 3))
