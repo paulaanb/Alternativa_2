@@ -120,7 +120,7 @@ if __name__ == "__main__":
     print(encryptRailFence("Me vale con un 5", 3))
      
     # codigo descifrar
-    print(decryptRailFence("Rbnareaeprfvrue pubm o ao", 3))
+    print(decryptRailFence("Rbnareaeprfvrue pubm o ao ", 3))
     print(decryptRailFence("Nuo n oqir raeeo ei r", 2))
     print(decryptRailFence("Macuevl o n5 en  ", 3))
-  
+ 

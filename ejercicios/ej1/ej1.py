@@ -287,7 +287,7 @@ class UniqueGroup:
 
     combo.cells.append(cell)
     combo.count += 1
-      return self.uniques[i][j]
+    return self.uniques[i][j]
   
 class Uniques:
   MAX_UNIQUES = 4 # 0 = singles; 1 = pairs; 2 = triplets; 3 = quads; etc.
