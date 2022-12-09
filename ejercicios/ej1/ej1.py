@@ -268,3 +268,8 @@ class Board:
 
       print()
       if ((y + 1) % 3) == 0: print()
+
+class UniqueCombo:
+  def __init__(self):
+    self.cells = []
+    self.count = 0
