@@ -273,3 +273,17 @@ class UniqueCombo:
   def __init__(self):
     self.cells = []
     self.count = 0
+
+class UniqueGroup:
+  def __init__(self):
+    self.combos = {}
+
+  def add_combo(self,candidates,cell):
+    combo = self.combos.get(candidates)
+
+    if combo is None:
+      combo = UniqueCombo()
+      self.combos[candidates] = combo
+
+    combo.cells.append(cell)
+    combo.count += 1
